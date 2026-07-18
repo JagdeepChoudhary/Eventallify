@@ -19,16 +19,24 @@ if (process.env.GOOGLE_CLIENT_ID && !process.env.GOOGLE_CLIENT_SECRET) {
   );
 }
 
-const APP_URL = process.env.BETTER_AUTH_URL || "http://localhost:3000";
+const APP_URL =
+  process.env.BETTER_AUTH_URL ||
+  (process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : "http://localhost:3000");
 
 export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: APP_URL,
 
   // Google's OAuth redirect must land on a trusted origin, and this also
-  // guards email/password endpoints against being hit from other origins
+  // guards email/password endpoints against being hit from other origins.
+  // VERCEL_URL covers preview deployments, which each get their own
+  // unpredictable *.vercel.app host — without it every preview branch
+  // hits the same invalid-origin error production did.
   trustedOrigins: [
     APP_URL,
+    ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
     ...(process.env.NODE_ENV !== "production" ? ["http://localhost:3001"] : []),
   ],
 
@@ -93,7 +101,7 @@ export const auth = betterAuth({
   },
 
   advanced: {
-    cookiePrefix: "Eventallify",
+    cookiePrefix: "eventhub",
     defaultCookieAttributes: {
       sameSite: "lax",
       path: "/",
