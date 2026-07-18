@@ -9,12 +9,15 @@ const PROTECTED_ROUTES = ["/dashboard", "/profile", "/my-events"];
 const ADMIN_ROUTES = ["/admin"];
 
 function getSession(request: NextRequest) {
-  const cookies = ["better-auth.session_token", "Eventallify.session_token"];
-
-  for (const name of cookies) {
-    const value = request.cookies.get(name)?.value;
-
-    if (value) return value;
+  // better-auth prepends "__Secure-" to the cookie name whenever the cookie
+  // is set with secure:true (i.e. in production/HTTPS) — that's a browser
+  // convention, not something you opt into. Matching only the literal
+  // "eventhub.session_token" name misses that prefixed variant entirely,
+  // so this checks by suffix instead of a fixed list of exact names.
+  for (const cookie of request.cookies.getAll()) {
+    if (cookie.name.endsWith("session_token")) {
+      return cookie.value;
+    }
   }
 
   return null;
